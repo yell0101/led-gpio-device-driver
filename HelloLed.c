@@ -46,8 +46,11 @@ static int hello_init(void) {
     gpio_addr = ioremap(GPIO_BASE, BLOCK_SIZE);
 
     // GPFSEL1 = gpio_addr + 1, #18
-    *(gpio_addr+GPFSEL4) &= ~(6 << (((42)%10)*3));
+    *(gpio_addr+GPFSEL1) |= (7 << (((GPIO_LED)%10)*3));
     *(gpio_addr+GPFSEL1) &= ~(6 << (((GPIO_LED)%10)*3));
+
+    *(gpio_addr+GPFSEL4) |= (7 << (((ACT_LED)%10)*3));
+    *(gpio_addr+GPFSEL4) &= ~(6 << (((ACT_LED)%10)*3));
 
     blinking(); // LED ON/OFF
 
