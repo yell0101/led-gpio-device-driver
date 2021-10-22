@@ -14,7 +14,7 @@
 // address offset of registers for BCM_GPIO #18 #10
 #define GPIO_LED 18 // BCD_GPIO #18
 #define ACT_LED 10
-#define GPFSEL0 (0x04/4) // int *
+#define GPFSEL1 (0x04/4) // int *
 #define GPSET0 (0x1C/4)
 #define GPCLR0 (0x28/4)
 #define GPFSEL4 (0x10/4)
@@ -46,8 +46,8 @@ static int hello_init(void) {
     gpio_addr = ioremap(GPIO_BASE, BLOCK_SIZE);
 
     // GPFSEL1 = gpio_addr + 1, #18
-    *(gpio_addr+GPFSEL4) &= ~(6 << (((ACT_LED)%10)*3));
-    *(gpio_addr+GPFSEL0) &= ~(6 << (((GPIO_LED)%10)*3));
+    *(gpio_addr+GPFSEL4) &= ~(6 << (((42)%10)*3));
+    *(gpio_addr+GPFSEL1) &= ~(6 << (((GPIO_LED)%10)*3));
 
     blinking(); // LED ON/OFF
 
