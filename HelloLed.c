@@ -29,12 +29,14 @@ static void blinking(void) {
 
     for(i=0; i<5 ; i++){
         // 1C h : 28 dec = 4 * 7
-        *(gpio_addr+GPSET0) |= 1 << (GPIO_LED);
         *(gpio_addr+GPSET1) |= 1 << (ACT_LED);
+        *(gpio_addr+GPSET0) |= 1 << (GPIO_LED);
+
         mdelay(1000);
         // 28 h : 40 dec = 4 * 10
+        *(gpio_addr+GPCLR1) |= 1 << (ACT_LED);        
         *(gpio_addr+GPCLR0) |= 1 << (GPIO_LED);
-        *(gpio_addr+GPCLR1) |= 1 << (ACT_LED);
+
         mdelay(1000);
     }
 }
@@ -44,8 +46,8 @@ static int hello_init(void) {
     gpio_addr = ioremap(GPIO_BASE, BLOCK_SIZE);
 
     // GPFSEL1 = gpio_addr + 1, #18
-    *(gpio_addr+GPFSEL0) &= ~(6 << (((GPIO_LED)%10)*3));
     *(gpio_addr+GPFSEL4) &= ~(6 << (((ACT_LED)%10)*3));
+    *(gpio_addr+GPFSEL0) &= ~(6 << (((GPIO_LED)%10)*3));
 
     blinking(); // LED ON/OFF
 
