@@ -76,12 +76,29 @@ static const int LedGpioPin = 18; //edit
 static const int PhotoGpioPin = 17;
 
 static int photo_irq;
+static int blinkcount = 0;
 
-static irqreturn_t gpio_photo_irq (int irq, void *dev_id)
+static void BlinkTimerHandler(struct timer_list *unused) //edit unsigned long unused -> struct timer_list *unused
 {
     static bool on = false;
     on = !on;
     SetGPIOOutputValue(ActGpioPin, LedGpioPin, on); //42 on
+    blinkcount++;
+    if (blinkcount>5){
+
+        blinkcount = 0;
+        del_timer(&s_BlinkTimer);
+    }
+    else {
+        mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
+    }
+}
+
+static irqreturn_t gpio_photo_irq (int irq, void *dev_id)
+{
+
+    timer_setup(&s_BlinkTimer, BlinkTimerHandler , 0); //edit setup_timer -> timer_setup
+    //result = mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
 
     return 0;
 
@@ -89,12 +106,34 @@ static irqreturn_t gpio_photo_irq (int irq, void *dev_id)
 
 
 
+static ssize_t set_period_callback(struct device* dev, 
+    struct device_attribute* attr, 
+    const char* buf, 
+    size_t count) 
+{
+    long period_value = 0;
+    if (kstrtol(buf, 10, &period_value) < 0) {
+        return -EINVAL;
+    }
+    if (period_value < 10) {
+        return -EINVAL;
+    }
+    s_BlinkPeriod = period_value;
+    return count;
+}
+
+static DEVICE_ATTR(period, S_IRWXU | S_IRWXG, NULL, set_period_callback);
+
+static struct class *s_pDeviceClass;
+static struct device *s_pDeviceObject;
+
 #define PERIPH_BASE 0x3f000000
 #define GPIO_BASE 0xFE200000 // edit for BCM2711
 
 int LedBlinkModule_init(void) 
 {
     int irq_result;
+    int result;
 
     printk("insmod : LedBlinkModule \n");
     s_pGpioRegisters = (struct GpioRegisters *)ioremap(GPIO_BASE, sizeof(struct GpioRegisters));
@@ -108,17 +147,34 @@ int LedBlinkModule_init(void)
     
     printk("Waiting interrupt\n");
 
+    BUG_ON(result < 0);
+
+    s_pDeviceClass = class_create(THIS_MODULE, "LedBlink2");
+    BUG_ON(IS_ERR(s_pDeviceClass));
+
+    s_pDeviceObject = device_create(s_pDeviceClass, NULL, 0, NULL, "LedBlink2");
+    BUG_ON(IS_ERR(s_pDeviceObject));
+
+    result = device_create_file(s_pDeviceObject, &dev_attr_period);
+    BUG_ON(result < 0);
+
     return 0;
 }
 
 
 static void __exit LedBlinkModule_exit(void){
     SetGPIOOutputValue(ActGpioPin, LedGpioPin, false);
+    del_timer(&s_BlinkTimer);
+    iounmap(s_pGpioRegisters);
 
     free_irq(photo_irq, NULL);
 	gpio_free(ActGpioPin);
     gpio_free(LedGpioPin);
 	gpio_free(PhotoGpioPin);
+    
+    device_remove_file(s_pDeviceObject, &dev_attr_period);
+    device_destroy(s_pDeviceClass, 0);
+    class_destroy(s_pDeviceClass);
 
 }
 
