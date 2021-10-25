@@ -116,6 +116,9 @@ static void __exit LedBlinkModule_exit(void){
     SetGPIOFunction(ActGpioPin, LedGpioPin, PhotoGpioPin, 0); //Configure the pin as input
     del_timer(&s_BlinkTimer);
 
+    free_irq(photo_irq, NULL);
+
+
 
 }
 
