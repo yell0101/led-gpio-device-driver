@@ -17,7 +17,7 @@ int main(void) {
 
 	unsigned char buf;
 
-	dev = open("/dev/device_led", O_RDWR);
+	dev = open("/dev/ActPhoto_Module", O_RDWR);
 
 	if(dev < 0) {
 		printf( "Device Open ERROR!\n");

@@ -1,5 +1,5 @@
 #!/bin/bash
-module="device_led"
+module="ActPhoto_Module"
 major="202"
 
 echo `sudo mknod /dev/${module} c ${major} 0` #디바이스 파일 추가
