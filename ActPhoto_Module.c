@@ -97,11 +97,9 @@ static int gpiosw_open(struct inode *inode, struct file *filp){
 	gpio_request(GPIO_LED, "LED");
 	gpio_direction_output(GPIO_LED, 0);
 
- switch_irq = gpio_to_irq(GPIO_SW);
+ 	switch_irq = gpio_to_irq(GPIO_SW);
 
-	result = request_irq(switch_irq, &button_interrupt,IRQF_TRIGGER_FALLING,"Photo",NULL);
-
-//	a = request_irq(irqris,(irq_handler_t) rpi_gpio_irqrising, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING ,"rpi_gpio_irqrising",NULL);
+	result = request_irq(switch_irq, &button_interrupt, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,"Photo",NULL);
 
 	if(result < 0)
 		printk(KERN_ERR "%s: Request for IRQ %d failed\n",__FUNCTION__, GPIO_SW);
