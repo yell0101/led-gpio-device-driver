@@ -1,5 +1,5 @@
 //=============================
-//원본코드 
+//
 //gpiosw.c	
 // using gpio.h
 //	LED/BTN device driver
@@ -21,20 +21,20 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("melee");
-MODULE_DESCRIPTION("Raspberry Pi 3 GPIO Switch Device Driver Module");
+MODULE_DESCRIPTION("Raspberry Pi 4 GPIO LED,PhotoTr Device Driver Module");
 
 #define GPIOSW_MAJOR   202
 //#define GPIOSW_MAJOR   0	// automatic allocation
-#define GPIOSW_NAME    "gpiosw"
+#define GPIOSW_NAME    "gpio_actled"
 
 #define GPIO_SW		17	//5
-#define GPIO_LED	18	//26
+#define GPIO_LED	42	//ACT LED
 
 // address offset of registers for BCM_GPIO #18
-#define GPFSEL0		(0x00/4)	// int *
-#define GPSET0		(0x1C/4)
-#define GPCLR0		(0x28/4)
-#define GPLEV0		(0x34/4)
+#define GPFSEL0		(0x10/4)	// int *
+#define GPSET0		(0x20/4)
+#define GPCLR0		(0x2c/4)
+#define GPLEV0		(0x38/4)
 
 volatile unsigned int * gpio_addr;
 
@@ -44,7 +44,7 @@ static char hello[40] = {0};
 int state;		// sw state
 
 static irqreturn_t button_interrupt(int irq, void *dev_id){
-	char temp[40] = "GPIO 5 Switch was Pushed!";
+	char temp[40] = "Object has been detected";
 
 	strcpy(hello, temp);
 
@@ -90,7 +90,7 @@ static int gpiosw_open(struct inode *inode, struct file *filp){
 
 	printk("Kernel Module Open(): %s\n", GPIOSW_NAME);
 
-	gpio_request(GPIO_SW, "SWITCH");
+	gpio_request(GPIO_SW, "Photo");
 	gpio_direction_input(GPIO_SW);
 	gpio_set_debounce(GPIO_SW, 200);		// debouncing
 
@@ -99,7 +99,7 @@ static int gpiosw_open(struct inode *inode, struct file *filp){
 
  switch_irq = gpio_to_irq(GPIO_SW);
 
-	result = request_irq(switch_irq, &button_interrupt,IRQF_TRIGGER_FALLING,"SWITCH",NULL);
+	result = request_irq(switch_irq, &button_interrupt,IRQF_TRIGGER_FALLING,"Photo",NULL);
 
 //	a = request_irq(irqris,(irq_handler_t) rpi_gpio_irqrising, IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING ,"rpi_gpio_irqrising",NULL);
 
