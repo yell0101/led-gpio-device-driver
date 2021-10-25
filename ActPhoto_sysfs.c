@@ -60,12 +60,12 @@ static void SetGPIOFunction(int ACTGPIO, int LEDGPIO, int PHOTOGPIO, int OutfunC
 static void SetGPIOOutputValue(int ACTGPIO, int LEDGPIO, bool outputValue) {
  
     if(outputValue){
-        s_pGpioRegisters->GPCLR[ACTGPIO/32] = (1 << (ACTGPIO % 32)); // GPIO 42 -> 10
-        s_pGpioRegisters->GPCLR[LEDGPIO/32] = (1 << (LEDGPIO % 32));
+        s_pGpioRegisters->GPSET[ACTGPIO/32] = (1 << (ACTGPIO % 32)); // GPIO 42 -> 10
+        s_pGpioRegisters->GPSET[LEDGPIO/32] = (1 << (LEDGPIO % 32));
         } 
     else {
-        s_pGpioRegisters->GPSET[ACTGPIO/ 32] = (1 << (ACTGPIO % 32));
-        s_pGpioRegisters->GPSET[LEDGPIO/ 32] = (1 << (LEDGPIO % 32));
+        s_pGpioRegisters->GPCLR[ACTGPIO/ 32] = (1 << (ACTGPIO % 32));
+        s_pGpioRegisters->GPCLR[LEDGPIO/ 32] = (1 << (LEDGPIO % 32));
     }
 }
 
@@ -104,7 +104,7 @@ int LedBlinkModule_init(void)
 	gpio_request(PhotoGpioPin, "Photo");
 
     photo_irq = gpio_to_irq(PhotoGpioPin);
-    irq_result = request_irq(photo_irq, &gpio_photo_irq, IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,"Photo",NULL);
+    irq_result = request_irq(photo_irq, &gpio_photo_irq,IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,"Photo",NULL);
     
     printk("Waiting interrupt\n");
 
@@ -113,12 +113,12 @@ int LedBlinkModule_init(void)
 
 
 static void __exit LedBlinkModule_exit(void){
-    SetGPIOFunction(ActGpioPin, LedGpioPin, PhotoGpioPin, 0); //Configure the pin as input
-    del_timer(&s_BlinkTimer);
+    SetGPIOOutputValue(ActGpioPin, LedGpioPin, false);
 
     free_irq(photo_irq, NULL);
-
-
+	gpio_free(ActGpioPin);
+    gpio_free(LedGpioPin);
+	gpio_free(PhotoGpioPin);
 
 }
 
