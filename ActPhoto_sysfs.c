@@ -7,9 +7,14 @@
 #include <linux/mm.h>
 #include <linux/gpio.h>
 
+#include <linux/interrupt.h>
+#include <linux/cdev.h>
+#include <linux/gpio.h>
+#include <linux/uaccess.h>
+
 // Tested with kernel 4.9.79
 
-MODULE_LICENSE("GPL");
+
 
 struct GpioRegisters 
 {
@@ -70,57 +75,38 @@ static const int ActGpioPin = 42; //edit
 static const int LedGpioPin = 18; //edit
 static const int PhotoGpioPin = 17;
 
-static void BlinkTimerHandler(struct timer_list *unused) //edit unsigned long unused -> struct timer_list *unused
+static int photo_irq;
+
+static irqreturn_t gpio_photo_irq (int irq, void *dev_id)
 {
     static bool on = false;
     on = !on;
     SetGPIOOutputValue(ActGpioPin, LedGpioPin, on); //42 on
-    mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
+
+    return 0;
+
 }
 
-static ssize_t set_period_callback(struct device* dev, 
-    struct device_attribute* attr, 
-    const char* buf, 
-    size_t count) 
-{
-    long period_value = 0;
-    if (kstrtol(buf, 10, &period_value) < 0) {
-        return -EINVAL;
-    }
-    if (period_value < 10) {
-        return -EINVAL;
-    }
-    s_BlinkPeriod = period_value;
-    return count;
-}
 
-static DEVICE_ATTR(period, S_IRWXU | S_IRWXG, NULL, set_period_callback);
-
-static struct class *s_pDeviceClass;
-static struct device *s_pDeviceObject;
 
 #define PERIPH_BASE 0x3f000000
 #define GPIO_BASE 0xFE200000 // edit for BCM2711
 
-static int __init LedBlinkModule_init(void)
+int LedBlinkModule_init(void) 
 {
-    int result;
+    int irq_result;
+
+    printk("insmod : LedBlinkModule \n");
     s_pGpioRegisters = (struct GpioRegisters *)ioremap(GPIO_BASE, sizeof(struct GpioRegisters));
+
+    SetGPIOFunction(ActGpioPin,LedGpioPin,PhotoGpioPin,0b001); // set pin output,input
+
+	gpio_request(PhotoGpioPin, "Photo");
+
+    photo_irq = gpio_to_irq(PhotoGpioPin);
+    irq_result = request_irq(photo_irq, &gpio_photo_irq, IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,"Photo",NULL);
     
-    SetGPIOFunction(ActGpioPin,LedGpioPin,PhotoGpioPin,0b001); // Configure the pin 18,42 as output , 17 as input
-
-    timer_setup(&s_BlinkTimer, BlinkTimerHandler , 0); //edit setup_timer -> timer_setup
-    result = mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
-    BUG_ON(result < 0);
-
-    s_pDeviceClass = class_create(THIS_MODULE, "LedBlink2");
-    BUG_ON(IS_ERR(s_pDeviceClass));
-
-    s_pDeviceObject = device_create(s_pDeviceClass, NULL, 0, NULL, "LedBlink2");
-    BUG_ON(IS_ERR(s_pDeviceObject));
-
-    result = device_create_file(s_pDeviceObject, &dev_attr_period);
-    BUG_ON(result < 0);
+    printk("Waiting interrupt\n");
 
     return 0;
 }
@@ -130,11 +116,12 @@ static void __exit LedBlinkModule_exit(void){
     SetGPIOFunction(ActGpioPin, LedGpioPin, PhotoGpioPin, 0); //Configure the pin as input
     del_timer(&s_BlinkTimer);
 
-    iounmap(s_pGpioRegisters);
-    device_remove_file(s_pDeviceObject, &dev_attr_period);
-    device_destroy(s_pDeviceClass, 0);
-    class_destroy(s_pDeviceClass);
+
 }
 
 module_init(LedBlinkModule_init);
 module_exit(LedBlinkModule_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("YerimLee");
+MODULE_DESCRIPTION("Raspberry Pi 4 GPIO LED Device Driver Module");
