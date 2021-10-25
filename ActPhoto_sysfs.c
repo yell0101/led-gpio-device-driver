@@ -96,9 +96,11 @@ static void BlinkTimerHandler(struct timer_list *unused) //edit unsigned long un
 
 static irqreturn_t gpio_photo_irq (int irq, void *dev_id)
 {
-
+    int result;
     timer_setup(&s_BlinkTimer, BlinkTimerHandler , 0); //edit setup_timer -> timer_setup
-    //result = mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
+    result = mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
+
+    BUG_ON(result < 0);
 
     return 0;
 
@@ -145,9 +147,10 @@ int LedBlinkModule_init(void)
     photo_irq = gpio_to_irq(PhotoGpioPin);
     irq_result = request_irq(photo_irq, &gpio_photo_irq,IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,"Photo",NULL);
     
+    
     printk("Waiting interrupt\n");
 
-    BUG_ON(result < 0);
+    
 
     s_pDeviceClass = class_create(THIS_MODULE, "LedBlink2");
     BUG_ON(IS_ERR(s_pDeviceClass));
