@@ -70,7 +70,7 @@ static void SetGPIOOutputValue(int ACTGPIO, int LEDGPIO, bool outputValue) {
 }
 
 static struct timer_list s_BlinkTimer;
-static int s_BlinkPeriod = 100;
+static int s_BlinkPeriod = 500;
 static const int ActGpioPin = 42; //edit
 static const int LedGpioPin = 18; //edit
 static const int PhotoGpioPin = 17;
@@ -85,22 +85,27 @@ static void BlinkTimerHandler(struct timer_list *unused) //edit unsigned long un
     static bool on = false;
     on = !on;
     SetGPIOOutputValue(ActGpioPin, LedGpioPin, on); //42 on
-    if (irq_count%2==0){
-        del_timer(&s_BlinkTimer);
-    }
-    else {
-        mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
-    }
+    printk("Blink\n");
+    mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
+    
 }
 
 static irqreturn_t gpio_photo_irq (int irq, void *dev_id)
 {
     int result;
-    timer_setup(&s_BlinkTimer, BlinkTimerHandler , 0); //edit setup_timer -> timer_setup
-    mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
 
+    
     irq_count++;
-
+    
+    if (irq_count%2!=0){
+        printk("Timer Start\n");
+        timer_setup(&s_BlinkTimer, BlinkTimerHandler , 0); //edit setup_timer -> timer_setup
+        mod_timer(&s_BlinkTimer, jiffies + msecs_to_jiffies(s_BlinkPeriod));
+    }
+    else {
+        del_timer(&s_BlinkTimer);
+        printk("Blink End\n");
+    }
     return 0;
 
 }
