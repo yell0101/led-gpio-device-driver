@@ -13,8 +13,8 @@
 
 
 ## 4. HelloLed
-sudo insmod hello.ko 를 실행하면 GPIO 18번에 연결된 LED, ACT LED 5번 blink.
-blink: mdelay 함수 이용
+- sudo insmod hello.ko 를 실행하면 GPIO 18번에 연결된 LED, ACT LED 5번 blink.
+- blink: mdelay 함수 이용
 
 ## 5. ActPhoto_Module
 -  ActPhoto_Module.c를 Makefile로 크로스 컴파일해서  ActPhoto_Module_app.ko를 만듦. 라즈베리파이에 옮김.
@@ -35,9 +35,8 @@ echo `ls /dev/${module} -al` // 추가한 디바이스 파일 확인하기
 - a를 실행시키면, 인터럽트 동작이 일어날 때 BCM 18 번에 연결된 500ms 간격으로 LED on/off 5번 실행
 
 ## 7. ActPhoto_sysfs
-인터럽트가 발생하면 ACT와 GPIO 18번에 연결 된 LED blink 시작. 
-다시 인터럽트 발생하면 LED blink 끝. 위 과정을 반복
-blink : timer 이용. sysfs 파일 값을 변경하여 period 변경.
+- 인터럽트가 발생하면 ACT와 GPIO 18번에 연결 된 LED blink 시작. 다시 인터럽트 발생하면 LED blink 끝. 위 과정을 반복
+- blink : timer 이용. sysfs 파일 값을 변경하여 period 변경.
 
 <주기 수정 방법>
 cd /sys/class/LedBlink2/LedBlink2
