@@ -147,6 +147,7 @@ int LedBlinkModule_init(void)
     SetGPIOFunction(ActGpioPin,LedGpioPin,PhotoGpioPin,0b001); // set pin output,input
 
 	gpio_request(PhotoGpioPin, "Photo");
+    gpio_set_debounce(PhotoGpioPin, 300);
 
     photo_irq = gpio_to_irq(PhotoGpioPin);
     irq_result = request_irq(photo_irq, &gpio_photo_irq,IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,"Photo",NULL);
